@@ -100,16 +100,21 @@ public class CheckoutTest extends ShopBaseTest {
         Assert.assertEquals(back.currentPath(), InventoryPage.PATH);
     }
 
-    @Test(groups = "regression",
-            description = "LIKELY DEFECT (documents current behaviour): checkout with an empty cart is allowed "
-                    + "and reaches an overview with no items and a $0.00 total")
-    public void likelyDefectCheckoutIsAllowedWithEmptyCart() {
+    /*
+     * KNOWN DEFECT (found 2026-11-17): with an empty cart, Checkout still opens the
+     * information step, and the user can go on to an overview with no items and a $0.00 total.
+     * This test states the correct behaviour and fails until the site is fixed, so it is in
+     * the "known-defect" group (skipped by regression, smoke and CI).
+     */
+    @Test(groups = "known-defect",
+            description = "KNOWN DEFECT: checkout is blocked when the cart is empty")
+    public void checkoutIsBlockedWithEmptyCart() {
         CartPage cart = inventory().openCart();
-        Assert.assertTrue(cart.getItemNames().isEmpty());
+        Assert.assertTrue(cart.getItemNames().isEmpty(), "Precondition: the cart should start empty");
 
-        CheckoutOverviewPage overview = cart.checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
+        boolean checkoutOpened = cart.tryCheckout();
 
-        Assert.assertTrue(overview.getItemNames().isEmpty());
-        Assert.assertEquals(overview.getTotal().compareTo(BigDecimal.ZERO), 0);
+        Assert.assertFalse(checkoutOpened,
+                "Checkout with an empty cart should be blocked, but the checkout information step opened");
     }
 }

@@ -1,12 +1,16 @@
 package com.nevena.ecommerce.pages;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /** The shopping cart. */
 public class CartPage extends BasePage {
@@ -14,6 +18,8 @@ public class CartPage extends BasePage {
     private static final By TITLE = By.cssSelector("[data-test='title']");
     private static final By CONTINUE_SHOPPING = By.cssSelector("[data-test='continue-shopping']");
     private static final By CHECKOUT = By.cssSelector("[data-test='checkout']");
+    // How long tryCheckout() waits for navigation before deciding checkout was blocked.
+    private static final Duration BLOCKED_CHECKOUT_WAIT = Duration.ofSeconds(3);
 
     /** Waits until the cart page has loaded. */
     public CartPage(WebDriver driver) {
@@ -47,5 +53,25 @@ public class CartPage extends BasePage {
     public CheckoutInformationPage checkout() {
         wait.until(ExpectedConditions.elementToBeClickable(CHECKOUT)).click();
         return new CheckoutInformationPage(driver);
+    }
+
+    /**
+     * Clicks Checkout without assuming it works (for negative tests).
+     * Returns true if the checkout information step opened, false if checkout was blocked
+     * (button missing or hidden, or the page stayed put for a few seconds).
+     */
+    public boolean tryCheckout() {
+        List<WebElement> buttons = driver.findElements(CHECKOUT);
+        if (buttons.isEmpty() || !buttons.get(0).isDisplayed()) {
+            return false;
+        }
+        buttons.get(0).click();
+        try {
+            new WebDriverWait(driver, BLOCKED_CHECKOUT_WAIT)
+                    .until(ExpectedConditions.urlContains(CheckoutInformationPage.PATH));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 }

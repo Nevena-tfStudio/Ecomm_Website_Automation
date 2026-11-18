@@ -77,6 +77,7 @@ Tests in the `known-defect` group describe the **correct** behaviour for bugs th
 
 | Defect | Test | Details |
 |---|---|---|
+| Checkout is allowed with an empty cart | `CheckoutTest.checkoutIsBlockedWithEmptyCart` | With nothing in the cart, Checkout still opens the information step, and the user can continue to an overview with no items and a $0.00 total. |
 | Invalid-login error text is cut off | `LoginVisualTest.errorMessageFitsInsideErrorBox` | The red box has a fixed 45px height, but the message wraps to 3 lines (60px). Fails at 1920×1080 and 1366×768 in Chrome and Firefox, and at 390×844 in Chrome. |
 
 ## Configuration
