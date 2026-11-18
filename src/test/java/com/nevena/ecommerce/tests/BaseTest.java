@@ -3,6 +3,7 @@ package com.nevena.ecommerce.tests;
 import com.nevena.ecommerce.config.Config;
 import com.nevena.ecommerce.support.DriverFactory;
 import com.nevena.ecommerce.support.Screenshots;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
@@ -27,6 +28,11 @@ public abstract class BaseTest {
             throw new IllegalStateException("No browser for this thread; did startBrowser() run?");
         }
         return driver;
+    }
+
+    /** Sets the browser window to an exact size, for layout and responsive tests. */
+    protected void resizeWindow(int width, int height) {
+        driver().manage().window().setSize(new Dimension(width, height));
     }
 
     @BeforeMethod(alwaysRun = true)

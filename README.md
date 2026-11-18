@@ -29,13 +29,15 @@ src/test/java/com/nevena/ecommerce/
     ├── BaseTest.java         # Starts/stops a browser for every test (one per thread)
     ├── ShopBaseTest.java     # BaseTest + login, starts on the inventory page
     ├── LoginTest.java
+    ├── LoginVisualTest.java  # Layout checks (known defect: clipped error box)
     ├── CartTest.java
     └── CheckoutTest.java
 src/test/resources/
 ├── config.properties         # URL, demo credentials, headless, timeout
 ├── allure.properties         # Where Allure writes its results
 ├── testng.xml                # Regression suite (default), runs in parallel
-└── smoke.xml                 # Smoke suite
+├── smoke.xml                 # Smoke suite
+└── known-defects.xml         # Tests for bugs the site still has (expected to fail)
 .github/workflows/tests.yml   # CI on GitHub Actions
 ```
 
@@ -53,6 +55,7 @@ Needs a JDK 25+ and Google Chrome or Firefox (Selenium Manager downloads the dri
 mvn test                                              # regression suite, visible browser
 mvn test -Dheadless=true                              # no browser window (as on CI)
 mvn test -DsuiteXml=src/test/resources/smoke.xml      # smoke suite only
+mvn test -DsuiteXml=src/test/resources/known-defects.xml  # known bugs (expected to fail)
 mvn test -Dbrowser=firefox                            # run in Firefox instead of Chrome
 mvn test -DthreadCount=1                              # one test at a time (default: 4 in parallel)
 mvn test -Dbase.url=https://other-env.example.com/    # any config value can be overridden
@@ -67,6 +70,14 @@ In IntelliJ you can also click the green run icon next to a test class or method
 - **TestNG report:** `target/surefire-reports/index.html`.
 
 On GitHub Actions the suite runs on Chrome and Firefox in parallel jobs. Each job uploads a `test-reports-<browser>` artifact with the Allure report, TestNG reports and any screenshots.
+
+## Known defects
+
+Tests in the `known-defect` group describe the **correct** behaviour for bugs the site still has, so they fail until the bug is fixed. The regression and smoke suites (and CI) skip them, so the build stays green. When one starts passing, the bug is fixed: move the test into the `regression` group.
+
+| Defect | Test | Details |
+|---|---|---|
+| Invalid-login error text is cut off | `LoginVisualTest.errorMessageFitsInsideErrorBox` | The red box has a fixed 45px height, but the message wraps to 3 lines (60px). Fails at 1920×1080 and 1366×768 in Chrome and Firefox, and at 390×844 in Chrome. |
 
 ## Configuration
 
