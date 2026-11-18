@@ -1,0 +1,14 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Quick check of the most important flows: mvn test -DsuiteXml=src/test/resources/smoke.xml -->
+<suite name="Smoke">
+    <test name="Smoke tests">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.nevena.ecommerce.tests"/>
+        </packages>
+    </test>
+</suite>
