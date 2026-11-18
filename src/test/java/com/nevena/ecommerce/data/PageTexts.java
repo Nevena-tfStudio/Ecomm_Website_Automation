@@ -5,6 +5,9 @@ public final class PageTexts {
     public static final String INVENTORY_TITLE = "Products";
     public static final String ORDER_CONFIRMATION = "Thank you for your order!";
 
+    /** The menu's About link must point at the Sauce Labs site. */
+    public static final String ABOUT_URL_PREFIX = "https://saucelabs.com";
+
     private PageTexts() {
     }
 }

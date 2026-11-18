@@ -2,6 +2,7 @@ package com.nevena.ecommerce.pages; // Places this class with the other page obj
 
 import com.nevena.ecommerce.config.Config; // Supplies the site URL from config.properties.
 import org.openqa.selenium.By; // Describes how Selenium locates a page element.
+import org.openqa.selenium.Keys; // Key presses such as Enter.
 import org.openqa.selenium.Rectangle; // Position and size of an element on the page.
 import org.openqa.selenium.WebDriver; // Provides browser control operations.
 import org.openqa.selenium.WebElement; // Represents an element such as an input or button.
@@ -12,6 +13,7 @@ public class LoginPage extends BasePage { // Models the login page; driver and w
     private static final By PASSWORD_FIELD = By.id("password"); // Stable test attribute for the password input.
     private static final By LOGIN_BUTTON = By.id("login-button"); // Stable test attribute for the login button.
     private static final By ERROR_MESSAGE = By.cssSelector("[data-test='error']"); // Container that displays a rejected-login message.
+    private static final By ERROR_CLOSE_BUTTON = By.cssSelector("[data-test='error-button']"); // The X button inside the error message.
     private static final By ERROR_BOX = By.cssSelector(".error-message-container"); // Red box around the error text (it has no data-test attribute).
 
     public LoginPage(WebDriver driver) { // Receives the browser from the test instead of creating a second browser.
@@ -38,6 +40,43 @@ public class LoginPage extends BasePage { // Models the login page; driver and w
         passwordInput.sendKeys(password); // Types the password supplied by the test.
 
         wait.until(ExpectedConditions.elementToBeClickable(LOGIN_BUTTON)).click(); // Clicks only after Selenium sees an enabled, clickable button.
+    }
+
+    public LoginPage waitUntilDisplayed() { // Waits until the login form is showing (e.g. after logging out).
+        wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD)); // The username box only exists on the login page.
+        return this; // Lets a caller chain the wait onto the constructor.
+    }
+
+    public boolean isLoginFormDisplayed() { // Tells whether the login form is on screen right now.
+        return !driver.findElements(USERNAME_FIELD).isEmpty() && driver.findElement(USERNAME_FIELD).isDisplayed(); // No waiting: reports the current state.
+    }
+
+    public InventoryPage loginWithEnterKey(String username, String password) { // Logs in by pressing Enter instead of clicking the button.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD)).sendKeys(username); // Types the username.
+        WebElement passwordInput = wait.until(ExpectedConditions.visibilityOfElementLocated(PASSWORD_FIELD)); // Waits for the password box.
+        passwordInput.sendKeys(password); // Types the password.
+        passwordInput.sendKeys(Keys.ENTER); // Enter in the password field should submit the form.
+        return new InventoryPage(driver); // InventoryPage waits until it has loaded.
+    }
+
+    public boolean isErrorDisplayed() { // Tells whether an error message is on screen right now.
+        return !driver.findElements(ERROR_MESSAGE).isEmpty() && driver.findElement(ERROR_MESSAGE).isDisplayed(); // No waiting: reports the current state.
+    }
+
+    public void closeError() { // Clicks the X on the error message and waits until the message is gone.
+        wait.until(ExpectedConditions.elementToBeClickable(ERROR_CLOSE_BUTTON)).click(); // Clicks the X once it is clickable.
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(ERROR_MESSAGE)); // The message must disappear.
+    }
+
+    public void openDirectly(String path) { // Types a page address straight into the browser (e.g. "/inventory.html").
+        driver.get(Config.baseUrl() + path.replaceFirst("^/", "")); // Joins the site URL and the path with a single slash.
+    }
+
+    public void goBack() { // Presses the browser's Back button.
+        driver.navigate().back(); // Goes to the previous history entry.
+        wait.until(ExpectedConditions.or( // Waits until the browser shows either the login form...
+                ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD), // ...the login form,
+                ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-test='inventory-container']")))); // ...or the inventory, so the test can judge which one.
     }
 
     public String getErrorMessage() { // Reads the error shown after a rejected login.

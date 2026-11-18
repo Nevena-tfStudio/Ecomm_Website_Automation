@@ -15,12 +15,15 @@ src/test/java/com/nevena/ecommerce/
 ├── data/Products.java        # Product names
 ├── data/PageTexts.java       # Expected titles and confirmation texts
 ├── data/Customer.java        # Valid checkout customer details
+├── data/Users.java           # Special usernames (locked_out_user)
 ├── pages/                    # Page objects: HOW to use each page
 │   ├── BasePage.java         # Shared driver, wait, cart badge helpers
 │   ├── LoginPage.java
 │   ├── Money.java            # Parses "$29.99" into BigDecimal
 │   ├── ItemList.java         # Reads item rows shared by cart and checkout overview
-│   ├── InventoryPage.java
+│   ├── InventoryPage.java    # Product list, sorting, opens product details
+│   ├── ProductPage.java      # Product detail page
+│   ├── Menu.java             # Burger menu (open it with openMenu() on any page after login)
 │   ├── CartPage.java
 │   ├── CheckoutInformationPage.java
 │   ├── CheckoutOverviewPage.java
@@ -31,6 +34,9 @@ src/test/java/com/nevena/ecommerce/
     ├── LoginTest.java
     ├── LoginVisualTest.java  # Layout checks (known defect: clipped error box)
     ├── CartTest.java
+    ├── SortingTest.java
+    ├── ProductDetailsTest.java
+    ├── MenuTest.java         # Menu checks (known defect: Reset App State leaves "Remove" buttons)
     └── CheckoutTest.java
 src/test/resources/
 ├── config.properties         # URL, demo credentials, headless, timeout
@@ -79,6 +85,7 @@ Tests in the `known-defect` group describe the **correct** behaviour for bugs th
 |---|---|---|
 | Checkout is allowed with an empty cart | `CheckoutTest.checkoutIsBlockedWithEmptyCart` | With nothing in the cart, Checkout still opens the information step, and the user can continue to an overview with no items and a $0.00 total. |
 | Invalid-login error text is cut off | `LoginVisualTest.errorMessageFitsInsideErrorBox` | The red box has a fixed 45px height, but the message wraps to 3 lines (60px). Fails at 1920×1080 and 1366×768 in Chrome and Firefox, and at 390×844 in Chrome. |
+| Reset App State leaves "Remove" buttons | `MenuTest.resetAppStateRestoresAddToCartButtons` | After adding a product and choosing Reset App State, the cart badge disappears but the product's button on the inventory page still says "Remove" (it only changes after a page reload). |
 
 ## Configuration
 
