@@ -3,9 +3,11 @@ package com.nevena.ecommerce.tests;
 import java.util.Map;
 
 import com.nevena.ecommerce.config.Config;
+import com.nevena.ecommerce.support.Screenshots;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
@@ -32,9 +34,16 @@ public abstract class BaseTest {
         driver = new ChromeDriver(options);
     }
 
+    /**
+     * Takes a screenshot if the test failed (or was skipped because its setup failed),
+     * then closes the browser. The screenshot must happen here, before quit().
+     */
     @AfterMethod(alwaysRun = true)
-    public void quitBrowser() {
+    public void quitBrowser(ITestResult result) {
         if (driver != null) {
+            if (result.getStatus() == ITestResult.FAILURE || result.getStatus() == ITestResult.SKIP) {
+                Screenshots.capture(driver, result);
+            }
             driver.quit();
             driver = null;
         }

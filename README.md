@@ -9,6 +9,7 @@ Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop
 ```text
 src/test/java/com/nevena/ecommerce/
 ├── config/Config.java        # Reads config.properties; -D flags override it
+├── support/Screenshots.java  # Saves a screenshot when a test fails
 ├── data/ErrorMessages.java   # Expected error texts shared by tests
 ├── data/Products.java        # Product names
 ├── data/PageTexts.java       # Expected titles and confirmation texts
@@ -54,7 +55,7 @@ mvn test -Dbase.url=https://other-env.example.com/    # any config value can be 
 
 In IntelliJ you can also click the green run icon next to a test class or method.
 
-Reports are written to `target/surefire-reports/` (open `index.html`). On GitHub Actions they are uploaded as the `test-reports` artifact of each run.
+Reports are written to `target/surefire-reports/` (open `index.html`). When a test fails, a screenshot of the browser at that moment is saved to `target/screenshots/` and its path is printed in the test output. On GitHub Actions, reports and screenshots are uploaded together as the `test-reports` artifact of each run.
 
 ## Configuration
 
