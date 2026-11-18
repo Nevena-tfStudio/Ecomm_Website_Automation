@@ -2,6 +2,7 @@ package com.nevena.ecommerce.tests;
 
 import com.nevena.ecommerce.config.Config;
 import com.nevena.ecommerce.data.ErrorMessages;
+import com.nevena.ecommerce.data.PageTexts;
 import com.nevena.ecommerce.pages.InventoryPage;
 import com.nevena.ecommerce.pages.LoginPage;
 import org.testng.Assert;
@@ -25,7 +26,7 @@ public class LoginTest extends BaseTest {
         InventoryPage inventory = loginPage.loginAs(Config.username(), Config.password());
 
         Assert.assertEquals(inventory.currentPath(), InventoryPage.PATH);
-        Assert.assertEquals(inventory.getTitle(), "Products");
+        Assert.assertEquals(inventory.getTitle(), PageTexts.INVENTORY_TITLE);
     }
 
     @DataProvider(name = "invalidCredentials")

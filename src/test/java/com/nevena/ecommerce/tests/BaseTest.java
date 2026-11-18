@@ -1,5 +1,7 @@
 package com.nevena.ecommerce.tests;
 
+import java.util.Map;
+
 import com.nevena.ecommerce.config.Config;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -18,6 +20,12 @@ public abstract class BaseTest {
     @BeforeMethod(alwaysRun = true)
     public void startBrowser() {
         ChromeOptions options = new ChromeOptions();
+        // Turn off Chrome's password manager: after logging in with SauceDemo's public password,
+        // its "password found in a data breach" popup can appear and swallow the test's clicks.
+        options.setExperimentalOption("prefs", Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false,
+                "profile.password_manager_leak_detection", false));
         if (Config.headless()) {
             options.addArguments("--headless=new", "--window-size=1920,1080");
         }

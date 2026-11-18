@@ -8,13 +8,25 @@ Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop
 src/test/java/com/nevena/ecommerce/
 ├── config/Config.java        # Reads config.properties; -D flags override it
 ├── data/ErrorMessages.java   # Expected error texts shared by tests
+├── data/Products.java        # Product names
+├── data/PageTexts.java       # Expected titles and confirmation texts
+├── data/Customer.java        # Valid checkout customer details
 ├── pages/                    # Page objects: HOW to use each page
-│   ├── BasePage.java         # Shared driver, wait and helpers
+│   ├── BasePage.java         # Shared driver, wait, cart badge helpers
 │   ├── LoginPage.java
-│   └── InventoryPage.java
+│   ├── Money.java            # Parses "$29.99" into BigDecimal
+│   ├── ItemList.java         # Reads item rows shared by cart and checkout overview
+│   ├── InventoryPage.java
+│   ├── CartPage.java
+│   ├── CheckoutInformationPage.java
+│   ├── CheckoutOverviewPage.java
+│   └── CheckoutCompletePage.java
 └── tests/                    # Tests: WHAT should happen
     ├── BaseTest.java         # Starts/stops Chrome for every test
-    └── LoginTest.java
+    ├── ShopBaseTest.java     # BaseTest + login, starts on the inventory page
+    ├── LoginTest.java
+    ├── CartTest.java
+    └── CheckoutTest.java
 src/test/resources/
 ├── config.properties         # URL, demo credentials, headless, timeout
 ├── testng.xml                # Regression suite (default)
