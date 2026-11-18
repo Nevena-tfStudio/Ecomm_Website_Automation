@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.support;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,6 +9,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -33,6 +36,9 @@ public final class Screenshots {
             Files.createDirectories(FOLDER);
             Path file = FOLDER.resolve(fileName(result));
             Files.write(file, png);
+            // Also show it in the Allure report (under the test's tear-down step).
+            Allure.attachment("Screenshot on failure", "image/png", new ByteArrayInputStream(png),
+                    AttachmentOptions.withFileExtension("png"));
 
             String message = "Screenshot: " + file.toAbsolutePath() + " (page: " + driver.getCurrentUrl() + ")";
             Reporter.setCurrentTestResult(result);

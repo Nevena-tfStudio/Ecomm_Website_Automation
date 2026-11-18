@@ -17,10 +17,24 @@
         <slf4j.version>2.0.20</slf4j.version>
         <!-- Stay on 3.5.x: surefire 3.6+ runs TestNG on the JUnit Platform and can't read testng.xml -->
         <surefire.version>3.5.6</surefire.version>
+        <allure.version>3.1.1</allure.version>
+        <allure-maven.version>3.1.0</allure-maven.version>
 
         <!-- Which TestNG suite "mvn test" runs. Override with -DsuiteXml=src/test/resources/smoke.xml -->
         <suiteXml>src/test/resources/testng.xml</suiteXml>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-bom</artifactId>
+                <version>${allure.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -42,6 +56,12 @@
             <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Records every test run into target/allure-results; "mvn allure:report" builds the HTML report -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -54,6 +74,15 @@
                     <suiteXmlFiles>
                         <suiteXmlFile>${suiteXml}</suiteXmlFile>
                     </suiteXmlFiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>${allure-maven.version}</version>
+                <configuration>
+                    <!-- One self-contained index.html that opens with a double-click (no web server needed) -->
+                    <singleFile>true</singleFile>
                 </configuration>
             </plugin>
         </plugins>

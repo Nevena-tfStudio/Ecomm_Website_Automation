@@ -34,3 +34,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Allure tooling (Node.js + report CLI downloaded by allure-maven)
+.allure/

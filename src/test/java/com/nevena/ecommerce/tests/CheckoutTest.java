@@ -33,8 +33,8 @@ public class CheckoutTest extends ShopBaseTest {
             dataProvider = "missingInformation",
             description = "A missing required field on the information step shows the matching error")
     public void missingRequiredFieldShowsError(String first, String last, String postalCode, String expectedError) {
-        inventory.addToCart(Products.BACKPACK);
-        CheckoutInformationPage info = inventory.openCart().checkout();
+        inventory().addToCart(Products.BACKPACK);
+        CheckoutInformationPage info = inventory().openCart().checkout();
 
         info.submitInformation(first, last, postalCode);
 
@@ -45,11 +45,11 @@ public class CheckoutTest extends ShopBaseTest {
     @Test(groups = "regression",
             description = "Overview: item total is the sum of prices, tax is 8% rounded half-up, total is item total + tax")
     public void overviewTotalsAreCalculatedCorrectly() {
-        inventory.addToCart(Products.BACKPACK);
-        inventory.addToCart(Products.BIKE_LIGHT);
-        inventory.addToCart(Products.BOLT_TSHIRT);
+        inventory().addToCart(Products.BACKPACK);
+        inventory().addToCart(Products.BIKE_LIGHT);
+        inventory().addToCart(Products.BOLT_TSHIRT);
 
-        CheckoutOverviewPage overview = inventory.openCart().checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
+        CheckoutOverviewPage overview = inventory().openCart().checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
 
         BigDecimal sumOfPrices = overview.getItemPrices().values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -64,9 +64,9 @@ public class CheckoutTest extends ShopBaseTest {
     @Test(groups = {"smoke", "regression"},
             description = "A user can buy an item end to end and the cart is empty afterwards")
     public void fullPurchaseCompletesAndEmptiesCart() {
-        inventory.addToCart(Products.BACKPACK);
+        inventory().addToCart(Products.BACKPACK);
 
-        CartPage cart = inventory.openCart();
+        CartPage cart = inventory().openCart();
         Assert.assertEquals(cart.getItemNames(), List.of(Products.BACKPACK));
         CheckoutOverviewPage overview = cart.checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
         Assert.assertEquals(overview.getItemNames(), List.of(Products.BACKPACK));
@@ -80,8 +80,8 @@ public class CheckoutTest extends ShopBaseTest {
     @Test(groups = "regression",
             description = "Cancel on the information step returns to the cart")
     public void cancelOnInformationStepReturnsToCart() {
-        inventory.addToCart(Products.BACKPACK);
-        CheckoutInformationPage info = inventory.openCart().checkout();
+        inventory().addToCart(Products.BACKPACK);
+        CheckoutInformationPage info = inventory().openCart().checkout();
 
         CartPage cart = info.cancel();
 
@@ -92,8 +92,8 @@ public class CheckoutTest extends ShopBaseTest {
     @Test(groups = "regression",
             description = "Cancel on the overview step returns to the inventory")
     public void cancelOnOverviewReturnsToInventory() {
-        inventory.addToCart(Products.BACKPACK);
-        CheckoutOverviewPage overview = inventory.openCart().checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
+        inventory().addToCart(Products.BACKPACK);
+        CheckoutOverviewPage overview = inventory().openCart().checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);
 
         InventoryPage back = overview.cancel();
 
@@ -104,7 +104,7 @@ public class CheckoutTest extends ShopBaseTest {
             description = "LIKELY DEFECT (documents current behaviour): checkout with an empty cart is allowed "
                     + "and reaches an overview with no items and a $0.00 total")
     public void likelyDefectCheckoutIsAllowedWithEmptyCart() {
-        CartPage cart = inventory.openCart();
+        CartPage cart = inventory().openCart();
         Assert.assertTrue(cart.getItemNames().isEmpty());
 
         CheckoutOverviewPage overview = cart.checkout().continueWith(Customer.FIRST_NAME, Customer.LAST_NAME, Customer.POSTAL_CODE);

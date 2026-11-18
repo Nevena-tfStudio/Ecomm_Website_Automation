@@ -11,19 +11,21 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class LoginTest extends BaseTest {
-    private LoginPage loginPage;
-
-    // Runs after BaseTest.startBrowser(), so the driver already exists.
+    // Runs after BaseTest.startBrowser(), so the browser already exists.
     @BeforeMethod(alwaysRun = true)
     public void openLoginPage() {
-        loginPage = new LoginPage(driver);
-        loginPage.open();
+        loginPage().open();
+    }
+
+    /** A page object for this thread's browser (LoginPage holds no state besides the driver). */
+    private LoginPage loginPage() {
+        return new LoginPage(driver());
     }
 
     @Test(groups = {"smoke", "regression"},
             description = "A valid user can log in and see the inventory")
     public void validCredentialsOpenInventory() {
-        InventoryPage inventory = loginPage.loginAs(Config.username(), Config.password());
+        InventoryPage inventory = loginPage().loginAs(Config.username(), Config.password());
 
         Assert.assertEquals(inventory.currentPath(), InventoryPage.PATH);
         Assert.assertEquals(inventory.getTitle(), PageTexts.INVENTORY_TITLE);
@@ -42,24 +44,24 @@ public class LoginTest extends BaseTest {
             dataProvider = "invalidCredentials",
             description = "Invalid credentials are rejected")
     public void invalidCredentialsAreRejected(String username, String password) {
-        loginPage.submitLogin(username, password);
+        loginPage().submitLogin(username, password);
 
-        Assert.assertEquals(loginPage.getErrorMessage(), ErrorMessages.INVALID_CREDENTIALS);
+        Assert.assertEquals(loginPage().getErrorMessage(), ErrorMessages.INVALID_CREDENTIALS);
     }
 
     @Test(groups = "regression",
             description = "Submitting an empty form shows a username-required error")
     public void emptyCredentialsShowUsernameError() {
-        loginPage.submitLogin("", "");
+        loginPage().submitLogin("", "");
 
-        Assert.assertEquals(loginPage.getErrorMessage(), ErrorMessages.USERNAME_REQUIRED);
+        Assert.assertEquals(loginPage().getErrorMessage(), ErrorMessages.USERNAME_REQUIRED);
     }
 
     @Test(groups = "regression",
             description = "Submitting a username without a password shows a password-required error")
     public void missingPasswordShowsPasswordError() {
-        loginPage.submitLogin(Config.username(), "");
+        loginPage().submitLogin(Config.username(), "");
 
-        Assert.assertEquals(loginPage.getErrorMessage(), ErrorMessages.PASSWORD_REQUIRED);
+        Assert.assertEquals(loginPage().getErrorMessage(), ErrorMessages.PASSWORD_REQUIRED);
     }
 }

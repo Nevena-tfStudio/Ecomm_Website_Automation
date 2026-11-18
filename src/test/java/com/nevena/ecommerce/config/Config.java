@@ -28,6 +28,11 @@ public final class Config {
         return get("password");
     }
 
+    /** "chrome" or "firefox". */
+    public static String browser() {
+        return get("browser");
+    }
+
     public static boolean headless() {
         return Boolean.parseBoolean(get("headless"));
     }

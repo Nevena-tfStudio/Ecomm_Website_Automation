@@ -8,8 +8,13 @@ on:
 
 jobs:
   test:
+    name: UI tests (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false # a Firefox failure shouldn't cancel the Chrome run, and vice versa
+      matrix:
+        browser: [chrome, firefox]
 
     steps:
       - name: Check out code
@@ -22,16 +27,28 @@ jobs:
           java-version: '25' # matches maven.compiler.release in pom.xml
           cache: maven
 
-      # Chrome is preinstalled on ubuntu-latest; Selenium Manager downloads the matching driver.
-      - name: Run tests (headless Chrome)
-        run: mvn -B test -Dheadless=true
+      # The Allure plugin downloads Node.js and the Allure report tool into .allure/
+      - name: Cache Allure tooling
+        uses: actions/cache@v4
+        with:
+          path: .allure
+          key: allure-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+
+      # Chrome and Firefox are preinstalled on ubuntu-latest; Selenium Manager gets the drivers.
+      - name: Run tests (headless ${{ matrix.browser }})
+        run: mvn -B test -Dheadless=true -Dbrowser=${{ matrix.browser }}
+
+      - name: Build Allure report
+        if: always() # build it for failed runs too: that's when it's most useful
+        run: mvn -B allure:report
 
       - name: Upload test reports
-        if: always() # keep the reports for failed runs too
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          name: test-reports-${{ matrix.browser }}
           path: |
+            target/site/allure-maven-plugin/
             target/surefire-reports/
             target/screenshots/
           retention-days: 14

@@ -1,12 +1,9 @@
 package com.nevena.ecommerce.tests;
 
-import java.util.Map;
-
 import com.nevena.ecommerce.config.Config;
+import com.nevena.ecommerce.support.DriverFactory;
 import com.nevena.ecommerce.support.Screenshots;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -15,23 +12,26 @@ import org.testng.annotations.BeforeMethod;
  * Starts a fresh browser before each test and closes it afterwards.
  * Every test class extends this. alwaysRun = true keeps setup running
  * when a suite selects tests by group (smoke/regression).
+ *
+ * Tests run in parallel, and TestNG shares one instance of a test class between
+ * threads. So the browser is kept per thread (ThreadLocal), never in a plain field:
+ * always use driver().
  */
 public abstract class BaseTest {
-    protected WebDriver driver;
+    private static final ThreadLocal<WebDriver> DRIVER = new ThreadLocal<>();
+
+    /** The browser belonging to the test running on this thread. */
+    protected WebDriver driver() {
+        WebDriver driver = DRIVER.get();
+        if (driver == null) {
+            throw new IllegalStateException("No browser for this thread; did startBrowser() run?");
+        }
+        return driver;
+    }
 
     @BeforeMethod(alwaysRun = true)
     public void startBrowser() {
-        ChromeOptions options = new ChromeOptions();
-        // Turn off Chrome's password manager: after logging in with SauceDemo's public password,
-        // its "password found in a data breach" popup can appear and swallow the test's clicks.
-        options.setExperimentalOption("prefs", Map.of(
-                "credentials_enable_service", false,
-                "profile.password_manager_enabled", false,
-                "profile.password_manager_leak_detection", false));
-        if (Config.headless()) {
-            options.addArguments("--headless=new", "--window-size=1920,1080");
-        }
-        driver = new ChromeDriver(options);
+        DRIVER.set(DriverFactory.create(Config.browser(), Config.headless()));
     }
 
     /**
@@ -40,12 +40,17 @@ public abstract class BaseTest {
      */
     @AfterMethod(alwaysRun = true)
     public void quitBrowser(ITestResult result) {
-        if (driver != null) {
+        WebDriver driver = DRIVER.get();
+        if (driver == null) {
+            return;
+        }
+        try {
             if (result.getStatus() == ITestResult.FAILURE || result.getStatus() == ITestResult.SKIP) {
                 Screenshots.capture(driver, result);
             }
+        } finally {
             driver.quit();
-            driver = null;
+            DRIVER.remove();
         }
     }
 }
