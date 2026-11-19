@@ -4,6 +4,16 @@
 
 Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop, written in Java with Selenium WebDriver, TestNG and Maven.
 
+## Highlights
+
+- **44 regression tests** covering login, inventory and sorting, product details, cart, checkout (with tax and total calculations), the side menu, SauceDemo's special users and accessibility.
+- **16 real site bugs found and documented** as `known-defect` tests. Each one asserts the correct behaviour, so it starts passing when the bug is fixed (see [Known defects](#known-defects)).
+- **Page Object Model** with no Selenium calls in the tests, explicit waits only (no `Thread.sleep`), and test data kept in constants.
+- **Parallel and cross-browser:** tests run 4 at a time, thread-safely (a `ThreadLocal` WebDriver), on Chrome and Firefox.
+- **CI on GitHub Actions:** runs on every push and pull request, plus a nightly run that also re-checks the known bugs.
+- **Reports:** Allure with readable named steps, screenshots attached on failure, and axe accessibility findings as JSON.
+- **Beyond functional tests:** a layout check that compares element positions at three screen sizes, a login-time performance check, and WCAG A/AA scans with axe-core.
+
 ## Project layout
 
 ```text
