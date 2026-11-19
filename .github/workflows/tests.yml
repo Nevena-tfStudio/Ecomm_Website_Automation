@@ -56,12 +56,12 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore # screenshots only exist when something failed
 
-  # Nightly (and manual) only: re-check the documented site bugs. These tests are expected to fail
+  # Re-checks the documented site bugs (not on pull requests). These tests are expected to fail
   # while the bugs exist, so the job is allowed to fail without turning the run red. Its report shows
   # which bugs are still there; a test that starts passing means a bug was fixed.
   known-defects:
     name: Known defects (chrome)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     continue-on-error: true
@@ -101,3 +101,78 @@ jobs:
             target/screenshots/
           retention-days: 14
           if-no-files-found: ignore
+
+  # Publishes the three Allure reports to GitHub Pages, so anyone can open them in the browser.
+  publish-reports:
+    name: Publish reports to GitHub Pages
+    needs: [test, known-defects]
+    # Publish after failed runs too (that's when the report matters most), but only for main.
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    steps:
+      - name: Download reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+
+      - name: Build site
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          mkdir -p site
+          for name in chrome:test-reports-chrome firefox:test-reports-firefox known-defects:known-defects-report; do
+            dir="${name%%:*}"; artifact="${name#*:}"
+            report="reports/$artifact/site/allure-maven-plugin/index.html"
+            if [ -f "$report" ]; then mkdir -p "site/$dir" && cp "$report" "site/$dir/index.html"; fi
+          done
+          date="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          short_sha="${GITHUB_SHA::7}"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          cat > site/index.html <<HTML
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>SauceDemo test reports</title>
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: #1f2328; background: #fff; }
+              a { color: #0969da; }
+              li { margin: .6rem 0; }
+              .meta { color: #59636e; font-size: .9rem; }
+            </style>
+          </head>
+          <body>
+            <h1>SauceDemo test reports</h1>
+            <p>Allure reports from the latest CI run of
+              <a href="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY">$GITHUB_REPOSITORY</a>.</p>
+            <ul>
+              <li><a href="chrome/">Regression suite on Chrome</a></li>
+              <li><a href="firefox/">Regression suite on Firefox</a></li>
+              <li><a href="known-defects/">Known defects</a>: tests for real site bugs, expected to fail until the site is fixed</li>
+            </ul>
+            <p class="meta">Regression result: $RESULT &middot; commit <code>$short_sha</code> &middot; $date &middot;
+              <a href="$run_url">CI run</a></p>
+          </body>
+          </html>
+          HTML
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

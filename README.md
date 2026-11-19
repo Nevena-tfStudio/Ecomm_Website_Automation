@@ -4,6 +4,8 @@
 
 Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop, written in Java with Selenium WebDriver, TestNG and Maven.
 
+**[Latest test reports](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/)**: Allure reports from the latest CI run (Chrome, Firefox and known defects), viewable in the browser.
+
 ## Highlights
 
 - **44 regression tests** covering login, inventory and sorting, product details, cart, checkout (with tax and total calculations), the side menu, SauceDemo's special users and accessibility.
@@ -11,7 +13,7 @@ Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop
 - **Page Object Model** with no Selenium calls in the tests, explicit waits only (no `Thread.sleep`), and test data kept in constants.
 - **Parallel and cross-browser:** tests run 4 at a time, thread-safely (a `ThreadLocal` WebDriver), on Chrome and Firefox.
 - **CI on GitHub Actions:** runs on every push and pull request, plus a nightly run that also re-checks the known bugs.
-- **Reports:** Allure with readable named steps, screenshots attached on failure, and axe accessibility findings as JSON.
+- **Reports:** [Allure, published online](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/) after every run, with readable named steps, screenshots attached on failure, and axe accessibility findings as JSON.
 - **Beyond functional tests:** a layout check that compares element positions at three screen sizes, a login-time performance check, and WCAG A/AA scans with axe-core.
 
 ## Project layout
@@ -97,7 +99,9 @@ In IntelliJ you can also click the green run icon next to a test class or method
 
 On GitHub Actions the suite runs on Chrome and Firefox in parallel jobs. Each job uploads a `test-reports-<browser>` artifact with the Allure report, TestNG reports and any screenshots.
 
-CI also runs every night at 03:00 UTC, so changes on the live site are caught even when nobody pushes. Nightly (and manual) runs add a **Known defects** job that runs the `known-defect` suite. It is allowed to fail, so it doesn't turn the run red, and its `known-defects-report` artifact shows which bugs are still there.
+CI also runs every night at 03:00 UTC, so changes on the live site are caught even when nobody pushes. Every run except pull requests also has a **Known defects** job that runs the `known-defect` suite. It is allowed to fail, so it doesn't turn the run red, and its report shows which bugs are still there.
+
+After each run on `main`, the three Allure reports are published to GitHub Pages: [https://nevena-tfstudio.github.io/Ecomm_Website_Automation/](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/).
 
 ## Known defects
 
