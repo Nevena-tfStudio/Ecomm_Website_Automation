@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -47,6 +48,12 @@ public class InventoryPage extends BasePage {
         SortOption(String label) {
             this.label = label;
         }
+
+        /** The dropdown text, so a step reads "Sort products by Name (Z to A)". */
+        @Override
+        public String toString() {
+            return label;
+        }
     }
 
     /** One product row as shown in the list; buttonText is "Add to cart" or "Remove". */
@@ -65,12 +72,14 @@ public class InventoryPage extends BasePage {
     }
 
     /** Clicks "Add to cart" for the product and waits until its button turns into "Remove". */
+    @Step("Add {productName} to the cart")
     public void addToCart(String productName) {
         driver.findElement(buttonLocator("add-to-cart", productName)).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(buttonLocator("remove", productName)));
     }
 
     /** Clicks "Remove" for the product and waits until its button turns back into "Add to cart". */
+    @Step("Remove {productName} from the cart")
     public void removeFromCart(String productName) {
         driver.findElement(buttonLocator("remove", productName)).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(buttonLocator("add-to-cart", productName)));
@@ -80,6 +89,7 @@ public class InventoryPage extends BasePage {
      * Clicks "Add to cart" without assuming it works (for negative tests).
      * Returns true if the button turned into "Remove", false if it did not change within a couple of seconds.
      */
+    @Step("Try to add {productName} to the cart")
     public boolean tryAddToCart(String productName) {
         driver.findElement(buttonLocator("add-to-cart", productName)).click();
         return appears(buttonLocator("remove", productName));
@@ -89,6 +99,7 @@ public class InventoryPage extends BasePage {
      * Clicks "Remove" without assuming it works (for negative tests).
      * Returns true if the button turned back into "Add to cart", false if it did not change within a couple of seconds.
      */
+    @Step("Try to remove {productName} from the cart")
     public boolean tryRemoveFromCart(String productName) {
         driver.findElement(buttonLocator("remove", productName)).click();
         return appears(buttonLocator("add-to-cart", productName));
@@ -102,6 +113,7 @@ public class InventoryPage extends BasePage {
     }
 
     /** Chooses an option in the sort dropdown and waits until the page shows it as active. */
+    @Step("Sort products by {option}")
     public void sortBy(SortOption option) {
         new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
                 .selectByVisibleText(option.label);
@@ -112,6 +124,7 @@ public class InventoryPage extends BasePage {
      * Chooses a sort option without assuming it works (for negative tests): waits a couple of seconds for the
      * dropdown to show it as active, then returns whether it did.
      */
+    @Step("Try to sort products by {option}")
     public boolean trySortBy(SortOption option) {
         new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
                 .selectByVisibleText(option.label);
@@ -128,6 +141,7 @@ public class InventoryPage extends BasePage {
      * Chooses a sort option and returns the text of a JavaScript alert the page raised, if any (the alert is
      * accepted). Unlike sortBy() this does not wait for the dropdown to show the option as active.
      */
+    @Step("Sort products by {option} and watch for an alert")
     public Optional<String> sortAndGetAlert(SortOption option) {
         try {
             new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
@@ -182,12 +196,14 @@ public class InventoryPage extends BasePage {
     }
 
     /** Clicks the product's name to open its detail page. */
+    @Step("Open the details of {productName}")
     public ProductPage openProduct(String productName) {
         driver.findElement(By.xpath("//*[@data-test='inventory-item-name'][normalize-space()='"
                 + productName + "']")).click();
         return new ProductPage(driver);
     }
 
+    @Step("Open the cart")
     public CartPage openCart() {
         driver.findElement(CART_LINK).click();
         return new CartPage(driver);

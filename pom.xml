@@ -19,6 +19,9 @@
         <surefire.version>3.5.6</surefire.version>
         <allure.version>3.1.1</allure.version>
         <allure-maven.version>3.1.0</allure-maven.version>
+        <!-- Weaves Allure's @Step annotations at test time (javaagent in the surefire argLine below) -->
+        <aspectj.version>1.9.27</aspectj.version>
+        <axe.version>4.14.0</axe.version>
 
         <!-- Which TestNG suite "mvn test" runs. Override with -DsuiteXml=src/test/resources/smoke.xml -->
         <suiteXml>src/test/resources/testng.xml</suiteXml>
@@ -62,6 +65,20 @@
             <artifactId>allure-testng</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Downloads the aspectjweaver jar that the surefire javaagent points at -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Accessibility rules (axe-core) run through Selenium -->
+        <dependency>
+            <groupId>com.deque.html.axe-core</groupId>
+            <artifactId>selenium</artifactId>
+            <version>${axe.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,6 +88,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
                 <configuration>
+                    <argLine>-javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"</argLine>
                     <suiteXmlFiles>
                         <suiteXmlFile>${suiteXml}</suiteXmlFile>
                     </suiteXmlFiles>

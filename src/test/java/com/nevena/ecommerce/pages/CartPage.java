@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -39,17 +40,20 @@ public class CartPage extends BasePage {
     }
 
     /** Removes the item and waits until its row has left the list. */
+    @Step("Remove {productName} from the cart page")
     public void removeItem(String productName) {
         driver.findElement(InventoryPage.buttonLocator("remove", productName)).click();
         wait.until(ExpectedConditions.invisibilityOfElementLocated(
                 InventoryPage.buttonLocator("remove", productName)));
     }
 
+    @Step("Continue shopping")
     public InventoryPage continueShopping() {
         driver.findElement(CONTINUE_SHOPPING).click();
         return new InventoryPage(driver);
     }
 
+    @Step("Start checkout")
     public CheckoutInformationPage checkout() {
         wait.until(ExpectedConditions.elementToBeClickable(CHECKOUT)).click();
         return new CheckoutInformationPage(driver);
@@ -60,6 +64,7 @@ public class CartPage extends BasePage {
      * Returns true if the checkout information step opened, false if checkout was blocked
      * (button missing or hidden, or the page stayed put for a few seconds).
      */
+    @Step("Try to start checkout")
     public boolean tryCheckout() {
         List<WebElement> buttons = driver.findElements(CHECKOUT);
         if (buttons.isEmpty() || !buttons.get(0).isDisplayed()) {

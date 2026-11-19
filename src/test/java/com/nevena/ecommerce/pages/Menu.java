@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -26,17 +27,20 @@ public class Menu extends BasePage {
         });
     }
 
+    @Step("Log out from the menu")
     public LoginPage logout() {
         driver.findElement(LOGOUT).click();
         return new LoginPage(driver).waitUntilDisplayed();
     }
 
+    @Step("Choose All Items in the menu")
     public InventoryPage allItems() {
         driver.findElement(ALL_ITEMS).click();
         return new InventoryPage(driver);
     }
 
     /** Clicks "Reset App State". The menu stays open afterwards. */
+    @Step("Choose Reset App State in the menu")
     public void resetAppState() {
         driver.findElement(RESET).click();
     }
@@ -47,6 +51,7 @@ public class Menu extends BasePage {
     }
 
     /** Closes the menu and waits until its links are hidden again. */
+    @Step("Close the menu")
     public void close() {
         driver.findElement(CLOSE_BUTTON).click();
         wait.until(ExpectedConditions.invisibilityOfElementLocated(RESET));

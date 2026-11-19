@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import java.math.BigDecimal;
 
 import org.openqa.selenium.By;
@@ -36,17 +37,20 @@ public class ProductPage extends BasePage {
     }
 
     /** Clicks "Add to cart" and waits until the button turns into "Remove". */
+    @Step("Add the product to the cart from its details page")
     public void addToCart() {
         wait.until(ExpectedConditions.elementToBeClickable(ADD_TO_CART)).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(REMOVE));
     }
 
     /** Clicks "Remove" and waits until the button turns back into "Add to cart". */
+    @Step("Remove the product from the cart on its details page")
     public void removeFromCart() {
         wait.until(ExpectedConditions.elementToBeClickable(REMOVE)).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(ADD_TO_CART));
     }
 
+    @Step("Go back to the product list")
     public InventoryPage backToProducts() {
         driver.findElement(BACK_TO_PRODUCTS).click();
         return new InventoryPage(driver);

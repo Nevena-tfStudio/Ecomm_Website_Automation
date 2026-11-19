@@ -11,6 +11,7 @@ src/test/java/com/nevena/ecommerce/
 ├── config/Config.java        # Reads config.properties; -D flags override it
 ├── support/DriverFactory.java # Creates Chrome or Firefox
 ├── support/Screenshots.java  # Saves a screenshot when a test fails
+├── support/Accessibility.java # Runs axe-core on the current page, attaches violations to Allure
 ├── data/ErrorMessages.java   # Expected error texts shared by tests
 ├── data/Products.java        # Product names
 ├── data/PageTexts.java       # Expected titles and confirmation texts
@@ -38,6 +39,7 @@ src/test/java/com/nevena/ecommerce/
     ├── ErrorUserTest.java    # error_user bugs (all known-defect)
     ├── VisualUserTest.java   # visual_user bugs (all known-defect)
     ├── PerformanceGlitchUserTest.java # performance_glitch_user slow login (known-defect)
+    ├── AccessibilityTest.java # axe-core checks of the login, inventory and cart pages
     ├── LoginTest.java
     ├── LoginVisualTest.java  # Layout checks (known defect: clipped error box)
     ├── CartTest.java
@@ -79,20 +81,26 @@ In IntelliJ you can also click the green run icon next to a test class or method
 ## Reports
 
 - **Allure report:** after `mvn test`, run `mvn allure:report` and open `target/site/allure-maven-plugin/index.html` (a single file; double-click it). The first run downloads the Allure tool into `.allure/` (git-ignored).
+- **Named steps:** page-object actions are annotated with Allure's `@Step`, so every test in the report shows readable steps such as "Add Sauce Labs Backpack to the cart". `@Step` only works with AspectJ weaving, which `pom.xml` sets up as a `-javaagent` (aspectjweaver) in the surefire `argLine`; when adding a page action, annotate it with `@Step("... {parameterName} ...")`. Passwords are hidden with `@Param(mode = Parameter.Mode.HIDDEN)`. If you run tests from IntelliJ, steps only appear when the same `-javaagent` is added to the run configuration's VM options.
 - **Screenshots:** when a test fails, a screenshot of the browser at that moment is saved to `target/screenshots/`, attached to the test in the Allure report, and its path is printed in the test output.
 - **TestNG report:** `target/surefire-reports/index.html`.
 
 On GitHub Actions the suite runs on Chrome and Firefox in parallel jobs. Each job uploads a `test-reports-<browser>` artifact with the Allure report, TestNG reports and any screenshots.
 
+CI also runs every night at 03:00 UTC, so changes on the live site are caught even when nobody pushes. Nightly (and manual) runs add a **Known defects** job that runs the `known-defect` suite. It is allowed to fail, so it doesn't turn the run red, and its `known-defects-report` artifact shows which bugs are still there.
+
 ## Known defects
 
-Tests in the `known-defect` group describe the **correct** behaviour for bugs the site still has, so they fail until the bug is fixed. The regression and smoke suites (and CI) skip them, so the build stays green. When one starts passing, the bug is fixed: move the test into the `regression` group.
+Tests in the `known-defect` group describe the **correct** behaviour for bugs the site still has, so they fail until the bug is fixed. The regression and smoke suites (and push/PR CI runs) skip them, so the build stays green. When one starts passing, the bug is fixed: move the test into the `regression` group.
 
 | Defect | Test | Details |
 |---|---|---|
 | Checkout is allowed with an empty cart | `CheckoutTest.checkoutIsBlockedWithEmptyCart` | With nothing in the cart, Checkout still opens the information step, and the user can continue to an overview with no items and a $0.00 total. |
 | Invalid-login error text is cut off | `LoginVisualTest.errorMessageFitsInsideErrorBox` | The red box has a fixed 45px height, but the message wraps to 3 lines (60px). Fails at 1920×1080 and 1366×768 in Chrome and Firefox, and at 390×844 in Chrome. |
 | Reset App State leaves "Remove" buttons | `MenuTest.resetAppStateRestoresAddToCartButtons` | After adding a product and choosing Reset App State, the cart badge disappears but the product's button on the inventory page still says "Remove" (it only changes after a page reload). |
+| Login page has accessibility gaps | `AccessibilityTest.loginPageHasNoBestPracticeViolations` | axe reports `page-has-heading-one` (the page has no h1) and `region` (content is not inside a landmark). |
+| Inventory page has no h1 | `AccessibilityTest.inventoryPageHasNoBestPracticeViolations` | axe reports `page-has-heading-one`. |
+| Cart page has no h1 | `AccessibilityTest.cartPageHasNoBestPracticeViolations` | axe reports `page-has-heading-one`. |
 | problem_user: all product pictures are the same | `ProblemUserTest.productImagesAreDistinct` | Every product shows the same "sl-404" placeholder picture. |
 | problem_user: sorting does nothing | `ProblemUserTest.sortingByNameReordersProducts` | Choosing "Name (Z to A)" leaves the products in A-to-Z order. |
 | problem_user: some Add to cart buttons are dead | `ProblemUserTest.addToCartWorksForEveryProduct` | For the Bolt T-Shirt, Fleece Jacket and Red T-Shirt the button stays "Add to cart" and the badge does not change. |
@@ -103,6 +111,15 @@ Tests in the `known-defect` group describe the **correct** behaviour for bugs th
 | visual_user: a product shows the placeholder picture | `VisualUserTest.noProductShowsThePlaceholderImage` | The Backpack shows the "sl-404" placeholder instead of its photo. |
 | visual_user: wrong, changing prices | `VisualUserTest.listPriceMatchesDetailPrice` | Inventory prices are random and change on every load (the Backpack shows e.g. $83.73), while the detail page shows the real $29.99. |
 | performance_glitch_user: slow login | `PerformanceGlitchUserTest.loginIsFast` | The inventory appears about 5 s after clicking Login; the test requires 2 s or less (`Limits.MAX_LOGIN_TIME`). |
+
+## Accessibility
+
+`AccessibilityTest` scans the login, inventory and cart pages with [axe-core](https://github.com/dequelabs/axe-core-maven-html) (`support/Accessibility.java`). Each scan attaches the violations as JSON to the Allure report.
+
+- **WCAG 2 A/AA rules** (regression): axe finds no violations on any of the three pages today, so the tests assert the list is empty. Any new A/AA violation, of any impact, fails the build.
+- **Best-practice rules** (known-defect): axe's non-WCAG "best-practice" rules do find gaps, listed below. The tests assert there are none and fail until the site is fixed.
+
+axe cannot judge everything (for example colour contrast on some elements is reported as "needs review", and keyboard or screen-reader use is not covered), so a clean scan is a safety net, not proof of accessibility.
 
 ## Special users
 

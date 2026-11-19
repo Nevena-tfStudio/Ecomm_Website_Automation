@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -26,6 +27,7 @@ public class CheckoutInformationPage extends BasePage {
     }
 
     /** Types into the three fields without clicking Continue. */
+    @Step("Fill in checkout information for {firstName} {lastName}")
     public void fillInformation(String firstName, String lastName, String postalCode) {
         type(FIRST_NAME, firstName);
         type(LAST_NAME, lastName);
@@ -41,12 +43,14 @@ public class CheckoutInformationPage extends BasePage {
     }
 
     /** Fills the form and clicks Continue without expecting success (for negative tests). */
+    @Step("Submit checkout information for {firstName} {lastName}")
     public void submitInformation(String firstName, String lastName, String postalCode) {
         fillInformation(firstName, lastName, postalCode);
         driver.findElement(CONTINUE).click();
     }
 
     /** Fills the form with valid data and moves on to the overview. */
+    @Step("Continue to the overview as {firstName} {lastName}")
     public CheckoutOverviewPage continueWith(String firstName, String lastName, String postalCode) {
         submitInformation(firstName, lastName, postalCode);
         return new CheckoutOverviewPage(driver);
@@ -56,6 +60,7 @@ public class CheckoutInformationPage extends BasePage {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(ERROR)).getText();
     }
 
+    @Step("Cancel checkout and return to the cart")
     public CartPage cancel() {
         driver.findElement(CANCEL).click();
         return new CartPage(driver);

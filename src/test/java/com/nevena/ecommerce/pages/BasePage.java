@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -56,6 +57,7 @@ public abstract class BasePage {
      * The burger button only ever opens the menu, so if a click is swallowed (it sometimes is in Firefox
      * right after the page re-rendered) it is safe to click again while the menu is still closed.
      */
+    @Step("Open the burger menu")
     public Menu openMenu() {
         WebDriverWait shortWait = new WebDriverWait(driver, MENU_OPEN_WAIT);
         for (int attempt = 1; attempt < MENU_OPEN_ATTEMPTS; attempt++) {

@@ -1,6 +1,9 @@
 package com.nevena.ecommerce.pages; // Places this class with the other page objects.
 
 import com.nevena.ecommerce.config.Config; // Supplies the site URL from config.properties.
+import io.qameta.allure.Param; // Lets a step parameter be hidden from the report.
+import io.qameta.allure.Step;
+import io.qameta.allure.model.Parameter; // Mode.HIDDEN keeps the password out of the report. // Marks a method as a named step in the Allure report.
 import org.openqa.selenium.By; // Describes how Selenium locates a page element.
 import org.openqa.selenium.Keys; // Key presses such as Enter.
 import org.openqa.selenium.Rectangle; // Position and size of an element on the page.
@@ -20,17 +23,20 @@ public class LoginPage extends BasePage { // Models the login page; driver and w
         super(driver); // BasePage checks the driver and creates the shared wait.
     }
 
+    @Step("Open the login page") // Shows this action as a named step in the Allure report.
     public void open() { // Navigates to the login page.
         driver.get(Config.baseUrl()); // Opens the site URL configured in config.properties.
         wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD)); // Confirms the login form is ready before a test uses it.
     }
 
-    public InventoryPage loginAs(String username, String password) { // Logs in with valid credentials and returns the page that follows.
+    @Step("Log in as {username}") // Shows this action as a named step in the Allure report.
+    public InventoryPage loginAs(String username, @Param(mode = Parameter.Mode.HIDDEN) String password) { // Logs in with valid credentials and returns the page that follows.
         submitLogin(username, password); // Fills in and submits the form.
         return new InventoryPage(driver); // InventoryPage waits until it has loaded.
     }
 
-    public void submitLogin(String username, String password) { // Submits the form without expecting success (for negative tests).
+    @Step("Submit the login form as {username}") // Shows this action as a named step in the Allure report.
+    public void submitLogin(String username, @Param(mode = Parameter.Mode.HIDDEN) String password) { // Submits the form without expecting success (for negative tests).
         WebElement usernameInput = wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD)); // Waits for the username box to appear.
         usernameInput.clear(); // Removes any value left in the field.
         usernameInput.sendKeys(username); // Types the username supplied by the test.
@@ -51,7 +57,8 @@ public class LoginPage extends BasePage { // Models the login page; driver and w
         return !driver.findElements(USERNAME_FIELD).isEmpty() && driver.findElement(USERNAME_FIELD).isDisplayed(); // No waiting: reports the current state.
     }
 
-    public InventoryPage loginWithEnterKey(String username, String password) { // Logs in by pressing Enter instead of clicking the button.
+    @Step("Log in as {username} by pressing Enter") // Shows this action as a named step in the Allure report.
+    public InventoryPage loginWithEnterKey(String username, @Param(mode = Parameter.Mode.HIDDEN) String password) { // Logs in by pressing Enter instead of clicking the button.
         wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME_FIELD)).sendKeys(username); // Types the username.
         WebElement passwordInput = wait.until(ExpectedConditions.visibilityOfElementLocated(PASSWORD_FIELD)); // Waits for the password box.
         passwordInput.sendKeys(password); // Types the password.
@@ -63,15 +70,18 @@ public class LoginPage extends BasePage { // Models the login page; driver and w
         return !driver.findElements(ERROR_MESSAGE).isEmpty() && driver.findElement(ERROR_MESSAGE).isDisplayed(); // No waiting: reports the current state.
     }
 
+    @Step("Close the login error message") // Shows this action as a named step in the Allure report.
     public void closeError() { // Clicks the X on the error message and waits until the message is gone.
         wait.until(ExpectedConditions.elementToBeClickable(ERROR_CLOSE_BUTTON)).click(); // Clicks the X once it is clickable.
         wait.until(ExpectedConditions.invisibilityOfElementLocated(ERROR_MESSAGE)); // The message must disappear.
     }
 
+    @Step("Open {path} directly in the browser") // Shows this action as a named step in the Allure report.
     public void openDirectly(String path) { // Types a page address straight into the browser (e.g. "/inventory.html").
         driver.get(Config.baseUrl() + path.replaceFirst("^/", "")); // Joins the site URL and the path with a single slash.
     }
 
+    @Step("Press the browser Back button") // Shows this action as a named step in the Allure report.
     public void goBack() { // Presses the browser's Back button.
         driver.navigate().back(); // Goes to the previous history entry.
         wait.until(ExpectedConditions.or( // Waits until the browser shows either the login form...

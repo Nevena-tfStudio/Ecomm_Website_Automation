@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -52,12 +53,14 @@ public class CheckoutOverviewPage extends BasePage {
         return Money.parse(driver.findElement(TOTAL).getText());
     }
 
+    @Step("Finish the order")
     public CheckoutCompletePage finish() {
         driver.findElement(FINISH).click();
         return new CheckoutCompletePage(driver);
     }
 
     /** Clicks Finish without assuming it works (for negative tests). True if the confirmation page opened. */
+    @Step("Try to finish the order")
     public boolean tryFinish() {
         driver.findElement(FINISH).click();
         try {
@@ -68,6 +71,7 @@ public class CheckoutOverviewPage extends BasePage {
         }
     }
 
+    @Step("Cancel the order and return to the products")
     public InventoryPage cancel() {
         driver.findElement(CANCEL).click();
         return new InventoryPage(driver);

@@ -1,5 +1,6 @@
 package com.nevena.ecommerce.pages;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -21,6 +22,7 @@ public class CheckoutCompletePage extends BasePage {
         return driver.findElement(HEADER).getText();
     }
 
+    @Step("Go back home after the order")
     public InventoryPage backHome() {
         driver.findElement(BACK_HOME).click();
         return new InventoryPage(driver);
