@@ -2,6 +2,8 @@ package com.nevena.ecommerce.pages;
 
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementClickInterceptedException;
+import org.openqa.selenium.ElementNotInteractableException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -29,20 +31,20 @@ public class Menu extends BasePage {
 
     @Step("Log out from the menu")
     public LoginPage logout() {
-        driver.findElement(LOGOUT).click();
+        click(LOGOUT);
         return new LoginPage(driver).waitUntilDisplayed();
     }
 
     @Step("Choose All Items in the menu")
     public InventoryPage allItems() {
-        driver.findElement(ALL_ITEMS).click();
+        click(ALL_ITEMS);
         return new InventoryPage(driver);
     }
 
     /** Clicks "Reset App State". The menu stays open afterwards. */
     @Step("Choose Reset App State in the menu")
     public void resetAppState() {
-        driver.findElement(RESET).click();
+        click(RESET);
     }
 
     /** Where the About link points (it is not clicked, so the external site is never loaded). */
@@ -53,7 +55,20 @@ public class Menu extends BasePage {
     /** Closes the menu and waits until its links are hidden again. */
     @Step("Close the menu")
     public void close() {
-        driver.findElement(CLOSE_BUTTON).click();
+        click(CLOSE_BUTTON);
         wait.until(ExpectedConditions.invisibilityOfElementLocated(RESET));
+    }
+
+    /**
+     * Clicks a menu link, retrying until the browser accepts the click. Even after the slide-in has
+     * settled, Chrome on CI occasionally reports a link as "not interactable" for a moment.
+     */
+    private void click(By locator) {
+        wait.ignoring(ElementNotInteractableException.class)
+                .ignoring(ElementClickInterceptedException.class)
+                .until(d -> {
+                    d.findElement(locator).click();
+                    return true;
+                });
     }
 }
