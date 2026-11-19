@@ -15,7 +15,8 @@ src/test/java/com/nevena/ecommerce/
 ├── data/Products.java        # Product names
 ├── data/PageTexts.java       # Expected titles and confirmation texts
 ├── data/Customer.java        # Valid checkout customer details
-├── data/Users.java           # Special usernames (locked_out_user)
+├── data/Users.java           # Special usernames (locked_out_user, problem_user, ...)
+├── data/Limits.java          # Time limits tests hold the site to (login time)
 ├── pages/                    # Page objects: HOW to use each page
 │   ├── BasePage.java         # Shared driver, wait, cart badge helpers
 │   ├── LoginPage.java
@@ -31,6 +32,12 @@ src/test/java/com/nevena/ecommerce/
 └── tests/                    # Tests: WHAT should happen
     ├── BaseTest.java         # Starts/stops a browser for every test (one per thread)
     ├── ShopBaseTest.java     # BaseTest + login, starts on the inventory page
+    ├── UserBaseTest.java     # BaseTest + loginAs(username), for tests that log in as a special user
+    ├── SpecialUsersTest.java # Every special user can log in (regression)
+    ├── ProblemUserTest.java  # problem_user bugs (all known-defect)
+    ├── ErrorUserTest.java    # error_user bugs (all known-defect)
+    ├── VisualUserTest.java   # visual_user bugs (all known-defect)
+    ├── PerformanceGlitchUserTest.java # performance_glitch_user slow login (known-defect)
     ├── LoginTest.java
     ├── LoginVisualTest.java  # Layout checks (known defect: clipped error box)
     ├── CartTest.java
@@ -86,6 +93,20 @@ Tests in the `known-defect` group describe the **correct** behaviour for bugs th
 | Checkout is allowed with an empty cart | `CheckoutTest.checkoutIsBlockedWithEmptyCart` | With nothing in the cart, Checkout still opens the information step, and the user can continue to an overview with no items and a $0.00 total. |
 | Invalid-login error text is cut off | `LoginVisualTest.errorMessageFitsInsideErrorBox` | The red box has a fixed 45px height, but the message wraps to 3 lines (60px). Fails at 1920×1080 and 1366×768 in Chrome and Firefox, and at 390×844 in Chrome. |
 | Reset App State leaves "Remove" buttons | `MenuTest.resetAppStateRestoresAddToCartButtons` | After adding a product and choosing Reset App State, the cart badge disappears but the product's button on the inventory page still says "Remove" (it only changes after a page reload). |
+| problem_user: all product pictures are the same | `ProblemUserTest.productImagesAreDistinct` | Every product shows the same "sl-404" placeholder picture. |
+| problem_user: sorting does nothing | `ProblemUserTest.sortingByNameReordersProducts` | Choosing "Name (Z to A)" leaves the products in A-to-Z order. |
+| problem_user: some Add to cart buttons are dead | `ProblemUserTest.addToCartWorksForEveryProduct` | For the Bolt T-Shirt, Fleece Jacket and Red T-Shirt the button stays "Add to cart" and the badge does not change. |
+| problem_user: Last Name does not keep its value | `ProblemUserTest.checkoutFieldsKeepTypedValues` | On checkout step one the Last Name stays empty and the typed text ends up in First Name (Continue then says "Last Name is required"). |
+| error_user: sorting raises an alert | `ErrorUserTest.sortingDoesNotRaiseAlert` | Any sort option shows the alert "Sorting is broken! This error has been reported to Backtrace." and the order does not change. |
+| error_user: some add/remove buttons are dead | `ErrorUserTest.addAndRemoveWorkForEveryProduct` | Add to cart does nothing for the Bolt T-Shirt, Fleece Jacket and Red T-Shirt; Remove does nothing for the Backpack, Bike Light and Onesie. |
+| error_user: Finish does not place the order | `ErrorUserTest.finishPlacesTheOrder` | Finish on the checkout overview does nothing; the confirmation page never opens. (The Last Name field also loses its text for this user.) |
+| visual_user: a product shows the placeholder picture | `VisualUserTest.noProductShowsThePlaceholderImage` | The Backpack shows the "sl-404" placeholder instead of its photo. |
+| visual_user: wrong, changing prices | `VisualUserTest.listPriceMatchesDetailPrice` | Inventory prices are random and change on every load (the Backpack shows e.g. $83.73), while the detail page shows the real $29.99. |
+| performance_glitch_user: slow login | `PerformanceGlitchUserTest.loginIsFast` | The inventory appears about 5 s after clicking Login; the test requires 2 s or less (`Limits.MAX_LOGIN_TIME`). |
+
+## Special users
+
+SauceDemo's special users (`problem_user`, `error_user`, `performance_glitch_user`, `visual_user`, all with the normal password) are built to misbehave. `SpecialUsersTest` checks that all four can log in (regression). Their bugs are covered by known-defect tests that each log in as their own user (via `UserBaseTest`), listed in the table above.
 
 ## Configuration
 

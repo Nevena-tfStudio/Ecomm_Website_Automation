@@ -21,11 +21,28 @@ public class CheckoutInformationPage extends BasePage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(FIRST_NAME));
     }
 
-    /** Fills the form and clicks Continue without expecting success (for negative tests). */
-    public void submitInformation(String firstName, String lastName, String postalCode) {
+    /** What the three form fields currently contain. */
+    public record FieldValues(String firstName, String lastName, String postalCode) {
+    }
+
+    /** Types into the three fields without clicking Continue. */
+    public void fillInformation(String firstName, String lastName, String postalCode) {
         type(FIRST_NAME, firstName);
         type(LAST_NAME, lastName);
         type(POSTAL_CODE, postalCode);
+    }
+
+    /** The values the fields currently hold (what the user would see in the form). */
+    public FieldValues getFieldValues() {
+        return new FieldValues(
+                driver.findElement(FIRST_NAME).getAttribute("value"),
+                driver.findElement(LAST_NAME).getAttribute("value"),
+                driver.findElement(POSTAL_CODE).getAttribute("value"));
+    }
+
+    /** Fills the form and clicks Continue without expecting success (for negative tests). */
+    public void submitInformation(String firstName, String lastName, String postalCode) {
+        fillInformation(firstName, lastName, postalCode);
         driver.findElement(CONTINUE).click();
     }
 

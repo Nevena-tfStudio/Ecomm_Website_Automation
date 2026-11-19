@@ -8,6 +8,9 @@ public final class PageTexts {
     /** The menu's About link must point at the Sauce Labs site. */
     public static final String ABOUT_URL_PREFIX = "https://saucelabs.com";
 
+    /** Part of the file name of the "image not found" picture SauceDemo shows instead of a product photo. */
+    public static final String PLACEHOLDER_IMAGE = "sl-404";
+
     private PageTexts() {
     }
 }

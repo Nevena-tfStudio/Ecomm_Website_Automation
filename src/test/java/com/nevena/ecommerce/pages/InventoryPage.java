@@ -3,10 +3,12 @@ package com.nevena.ecommerce.pages;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import com.nevena.ecommerce.config.Config;
 import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.UnhandledAlertException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -24,10 +26,14 @@ public class InventoryPage extends BasePage {
     private static final By ITEM_DESCRIPTION = By.cssSelector("[data-test='inventory-item-desc']");
     private static final By ITEM_PRICE = By.cssSelector("[data-test='inventory-item-price']");
     private static final By ITEM_BUTTON = By.cssSelector("button");
+    private static final By ITEM_IMAGE = By.cssSelector("img.inventory_item_img");
     private static final By SORT_DROPDOWN = By.cssSelector("[data-test='product-sort-container']");
     private static final By ACTIVE_SORT = By.cssSelector("[data-test='active-option']");
     // How long showsAddToCart() waits before deciding the button did not change.
     private static final Duration BUTTON_CHANGE_WAIT = Duration.ofSeconds(2);
+
+    // How long sortAndGetAlert() waits for an alert before deciding there is none.
+    private static final Duration ALERT_WAIT = Duration.ofSeconds(2);
 
     /** The options of the sort dropdown, with the text SauceDemo shows for each. */
     public enum SortOption {
@@ -70,6 +76,24 @@ public class InventoryPage extends BasePage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(buttonLocator("add-to-cart", productName)));
     }
 
+    /**
+     * Clicks "Add to cart" without assuming it works (for negative tests).
+     * Returns true if the button turned into "Remove", false if it did not change within a couple of seconds.
+     */
+    public boolean tryAddToCart(String productName) {
+        driver.findElement(buttonLocator("add-to-cart", productName)).click();
+        return appears(buttonLocator("remove", productName));
+    }
+
+    /**
+     * Clicks "Remove" without assuming it works (for negative tests).
+     * Returns true if the button turned back into "Add to cart", false if it did not change within a couple of seconds.
+     */
+    public boolean tryRemoveFromCart(String productName) {
+        driver.findElement(buttonLocator("remove", productName)).click();
+        return appears(buttonLocator("add-to-cart", productName));
+    }
+
     /** Price of a product as listed on the inventory page. */
     public BigDecimal getPrice(String productName) {
         By item = By.xpath("//*[@data-test='inventory-item'][.//*[@data-test='inventory-item-name']"
@@ -82,6 +106,48 @@ public class InventoryPage extends BasePage {
         new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
                 .selectByVisibleText(option.label);
         wait.until(ExpectedConditions.textToBe(ACTIVE_SORT, option.label));
+    }
+
+    /**
+     * Chooses a sort option without assuming it works (for negative tests): waits a couple of seconds for the
+     * dropdown to show it as active, then returns whether it did.
+     */
+    public boolean trySortBy(SortOption option) {
+        new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
+                .selectByVisibleText(option.label);
+        try {
+            new WebDriverWait(driver, BUTTON_CHANGE_WAIT)
+                    .until(ExpectedConditions.textToBe(ACTIVE_SORT, option.label));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Chooses a sort option and returns the text of a JavaScript alert the page raised, if any (the alert is
+     * accepted). Unlike sortBy() this does not wait for the dropdown to show the option as active.
+     */
+    public Optional<String> sortAndGetAlert(SortOption option) {
+        try {
+            new Select(wait.until(ExpectedConditions.elementToBeClickable(SORT_DROPDOWN)))
+                    .selectByVisibleText(option.label);
+        } catch (UnhandledAlertException e) {
+            // Some drivers report the alert straight from the select call.
+            return Optional.of(acceptAlert());
+        }
+        try {
+            new WebDriverWait(driver, ALERT_WAIT).until(ExpectedConditions.alertIsPresent());
+        } catch (TimeoutException e) {
+            return Optional.empty();
+        }
+        return Optional.of(acceptAlert());
+    }
+
+    /** The src of every product picture, in display order. */
+    public List<String> getImageSources() {
+        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(ITEM_IMAGE));
+        return driver.findElements(ITEM_IMAGE).stream().map(img -> img.getAttribute("src")).toList();
     }
 
     /** All products in display order. */
@@ -125,6 +191,22 @@ public class InventoryPage extends BasePage {
     public CartPage openCart() {
         driver.findElement(CART_LINK).click();
         return new CartPage(driver);
+    }
+
+    private boolean appears(By locator) {
+        try {
+            new WebDriverWait(driver, BUTTON_CHANGE_WAIT).until(ExpectedConditions.visibilityOfElementLocated(locator));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    private String acceptAlert() {
+        var alert = driver.switchTo().alert();
+        String text = alert.getText();
+        alert.accept();
+        return text;
     }
 
     /** SauceDemo derives button ids from the product name: "Sauce Labs Backpack" -> "add-to-cart-sauce-labs-backpack". */

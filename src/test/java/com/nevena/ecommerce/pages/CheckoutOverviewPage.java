@@ -1,12 +1,15 @@
 package com.nevena.ecommerce.pages;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /** Checkout step two: order summary with totals. */
 public class CheckoutOverviewPage extends BasePage {
@@ -17,6 +20,8 @@ public class CheckoutOverviewPage extends BasePage {
     private static final By TOTAL = By.cssSelector("[data-test='total-label']");
     private static final By FINISH = By.cssSelector("[data-test='finish']");
     private static final By CANCEL = By.cssSelector("[data-test='cancel']");
+    // How long tryFinish() waits for the confirmation page before deciding Finish did nothing.
+    private static final Duration FINISH_WAIT = Duration.ofSeconds(3);
 
     /** Waits until the overview is displayed. */
     public CheckoutOverviewPage(WebDriver driver) {
@@ -50,6 +55,17 @@ public class CheckoutOverviewPage extends BasePage {
     public CheckoutCompletePage finish() {
         driver.findElement(FINISH).click();
         return new CheckoutCompletePage(driver);
+    }
+
+    /** Clicks Finish without assuming it works (for negative tests). True if the confirmation page opened. */
+    public boolean tryFinish() {
+        driver.findElement(FINISH).click();
+        try {
+            new WebDriverWait(driver, FINISH_WAIT).until(ExpectedConditions.urlContains(CheckoutCompletePage.PATH));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 
     public InventoryPage cancel() {
