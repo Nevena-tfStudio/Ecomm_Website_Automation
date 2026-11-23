@@ -37,7 +37,7 @@ public abstract class BaseTest {
 
     @BeforeMethod(alwaysRun = true)
     public void startBrowser() {
-        DRIVER.set(DriverFactory.create(Config.browser(), Config.headless()));
+        DRIVER.set(DriverFactory.create(Config.browser(), Config.headless(), Config.gridUrl()));
     }
 
     /**

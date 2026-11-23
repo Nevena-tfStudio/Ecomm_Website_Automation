@@ -56,6 +56,65 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore # screenshots only exist when something failed
 
+  # The same regression suite, but with the browsers running in Docker on a Selenium Grid
+  # (docker-compose.yml) instead of on the runner itself.
+  grid:
+    name: UI tests on Selenium Grid (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Start Selenium Grid
+        run: docker compose up -d
+
+      - name: Wait until the Grid is ready
+        run: |
+          for i in $(seq 1 60); do
+            # Ready means the hub is up and a node offering this browser has registered
+            if curl -sf http://localhost:4444/status \
+                | jq -e --arg b "${{ matrix.browser }}" '.value.ready and ([.value.nodes[].slots[].stereotype.browserName] | index($b))' > /dev/null; then
+              echo "Grid is ready with ${{ matrix.browser }}"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Grid did not become ready in 2 minutes"; docker compose logs; exit 1
+
+      - name: Run tests on the Grid (${{ matrix.browser }})
+        run: mvn -B test -Dheadless=true -Dbrowser=${{ matrix.browser }} -Dgrid.url=http://localhost:4444
+
+      - name: Grid logs
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grid-reports-${{ matrix.browser }}
+          path: |
+            target/surefire-reports/
+            target/screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Stop Selenium Grid
+        if: always()
+        run: docker compose down
+
   # Re-checks the documented site bugs (not on pull requests). These tests are expected to fail
   # while the bugs exist, so the job is allowed to fail without turning the run red. Its report shows
   # which bugs are still there; a test that starts passing means a bug was fixed.

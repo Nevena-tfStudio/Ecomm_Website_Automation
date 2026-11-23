@@ -1,0 +1,33 @@
+# Selenium Grid with one Chrome and one Firefox node, for running the UI tests in containers.
+#   docker compose up -d                                  start the Grid (UI at http://localhost:4444)
+#   mvn test -Dgrid.url=http://localhost:4444             run the tests on it (add -Dbrowser=firefox for Firefox)
+#   docker compose down                                   stop it
+# Image versions match the Selenium client version in pom.xml.
+x-node: &node
+  shm_size: 2gb # browsers crash with Docker's default 64 MB of shared memory
+  depends_on:
+    - selenium-hub
+  environment:
+    SE_EVENT_BUS_HOST: selenium-hub
+    SE_EVENT_BUS_PUBLISH_PORT: 4442
+    SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
+    SE_NODE_MAX_SESSIONS: 4 # the suites run 4 tests in parallel
+    SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+    SE_SCREEN_WIDTH: 1920
+    SE_SCREEN_HEIGHT: 1080
+
+services:
+  selenium-hub:
+    image: selenium/hub:4.52.0-20261101
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+
+  chrome:
+    <<: *node
+    image: selenium/node-chrome:4.52.0-20261101
+
+  firefox:
+    <<: *node
+    image: selenium/node-firefox:4.52.0-20261101

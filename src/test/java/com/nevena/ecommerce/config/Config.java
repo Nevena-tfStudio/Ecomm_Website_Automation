@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -52,6 +53,15 @@ public final class Config {
 
     public static Duration timeout() {
         return Duration.ofSeconds(Long.parseLong(get("timeout.seconds")));
+    }
+
+    /**
+     * Selenium Grid address, e.g. http://localhost:4444. Empty (the default) means the browser starts
+     * on this machine; set it (-Dgrid.url=...) to run the browsers on a Grid instead.
+     */
+    public static Optional<String> gridUrl() {
+        String value = System.getProperty("grid.url", FILE_VALUES.getProperty("grid.url", ""));
+        return value.isBlank() ? Optional.empty() : Optional.of(value.trim());
     }
 
     public static String get(String key) {
