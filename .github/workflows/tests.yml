@@ -96,6 +96,14 @@ jobs:
       - name: Run tests on the Grid (${{ matrix.browser }})
         run: mvn -B test -Dheadless=true -Dbrowser=${{ matrix.browser }} -Dgrid.url=http://localhost:4444
 
+      - name: Count browser sessions on the Grid
+        if: always()
+        run: |
+          # Proof that the tests used the Grid's browsers, not ones on the runner
+          sessions=$(docker compose logs ${{ matrix.browser }} | grep -c "Session created" || true)
+          echo "The ${{ matrix.browser }} node started $sessions browser sessions"
+          [ "$sessions" -gt 0 ]
+
       - name: Grid logs
         if: failure()
         run: docker compose logs --tail=200
