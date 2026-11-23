@@ -12,6 +12,7 @@ Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop
 - **16 real site bugs found and documented** as `known-defect` tests. Each one asserts the correct behaviour, so it starts passing when the bug is fixed (see [Known defects](#known-defects)).
 - **Page Object Model** with no Selenium calls in the tests, explicit waits only (no `Thread.sleep`), and test data kept in constants.
 - **Parallel and cross-browser:** tests run 4 at a time, thread-safely (a `ThreadLocal` WebDriver), on Chrome and Firefox.
+- **Docker and Selenium Grid:** the same suite runs against a Selenium Grid in Docker (`docker-compose.yml`). CI runs it that way too, on both browsers.
 - **CI on GitHub Actions:** UI tests on Chrome and Firefox and API tests run on every push and pull request, plus nightly; known bugs are re-checked on every run on `main`.
 - **Reports:** [Allure, published online](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/) after every run, with readable named steps, screenshots attached on failure, and axe accessibility findings as JSON.
 - **API tests too:** 22 REST Assured tests for the public Restful-Booker API (full CRUD, auth, JSON schema, negative cases) with no browser, plus 8 documented API defects (see [API tests](#api-tests)).
@@ -74,6 +75,7 @@ src/test/resources/
 ├── known-defects.xml         # Tests for bugs the site still has (expected to fail)
 ├── api.xml                   # API suite (group "api")
 └── api-known-defects.xml     # API bugs (group "api-known-defect", expected to fail)
+docker-compose.yml            # Selenium Grid (hub + Chrome and Firefox nodes) in Docker
 .github/workflows/tests.yml   # CI on GitHub Actions
 ```
 
@@ -100,6 +102,21 @@ mvn test -Dbase.url=https://other-env.example.com/    # any config value can be 
 ```
 
 In IntelliJ you can also click the green run icon next to a test class or method.
+
+## Selenium Grid (Docker)
+
+`docker-compose.yml` starts a Selenium Grid: a hub plus one Chrome node and one Firefox node, each running up to 4 browsers at once (the suites run 4 tests in parallel). The image versions match the Selenium version in `pom.xml`. Setting `grid.url` makes `DriverFactory` create a `RemoteWebDriver` with the same browser options; nothing else in the framework changes.
+
+```bash
+docker compose up -d                                   # start the Grid; its UI is at http://localhost:4444
+mvn test -Dgrid.url=http://localhost:4444              # run the regression suite on the Grid (Chrome)
+mvn test -Dgrid.url=http://localhost:4444 -Dbrowser=firefox
+docker compose down                                    # stop it
+```
+
+Without `-Dheadless=true` the browsers run inside the containers' virtual screens (1920×1080), not on your desktop.
+
+On GitHub Actions the `UI tests on Selenium Grid` jobs do the same on Chrome and Firefox. They wait until the node for their browser has registered, then check after the run that the node's log shows the browser sessions. That proves the tests really used the Grid.
 
 ## Reports
 
@@ -199,5 +216,6 @@ SauceDemo's special users (`problem_user`, `error_user`, `performance_glitch_use
 | `browser` | `chrome` (default) or `firefox` |
 | `headless` | `true` runs the browser without a window |
 | `timeout.seconds` | Maximum wait for page elements |
+| `grid.url` | Selenium Grid address, e.g. `http://localhost:4444`. Empty (default): browsers start on this machine |
 | `api.base.url` | API under test (Restful-Booker) |
 | `api.username` / `api.password` | Restful-Booker's published admin login |
