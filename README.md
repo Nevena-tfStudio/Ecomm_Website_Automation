@@ -4,7 +4,7 @@
 
 Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop, written in Java with Selenium WebDriver, TestNG and Maven.
 
-**[Latest test reports](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/)**: Allure reports from the latest CI run (Chrome, Firefox and known defects), viewable in the browser.
+**[Latest test reports](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/)**: Allure reports from the latest CI run (UI on Chrome and Firefox, API, and the known defects of both), viewable in the browser.
 
 ## Highlights
 
@@ -12,8 +12,9 @@ Automated UI tests for the [SauceDemo](https://www.saucedemo.com/) practice shop
 - **16 real site bugs found and documented** as `known-defect` tests. Each one asserts the correct behaviour, so it starts passing when the bug is fixed (see [Known defects](#known-defects)).
 - **Page Object Model** with no Selenium calls in the tests, explicit waits only (no `Thread.sleep`), and test data kept in constants.
 - **Parallel and cross-browser:** tests run 4 at a time, thread-safely (a `ThreadLocal` WebDriver), on Chrome and Firefox.
-- **CI on GitHub Actions:** runs on every push and pull request, plus a nightly run that also re-checks the known bugs.
+- **CI on GitHub Actions:** UI tests on Chrome and Firefox and API tests run on every push and pull request, plus nightly; known bugs are re-checked on every run on `main`.
 - **Reports:** [Allure, published online](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/) after every run, with readable named steps, screenshots attached on failure, and axe accessibility findings as JSON.
+- **API tests too:** 22 REST Assured tests for the public Restful-Booker API (full CRUD, auth, JSON schema, negative cases) with no browser, plus 8 documented API defects (see [API tests](#api-tests)).
 - **Beyond functional tests:** a layout check that compares element positions at three screen sizes, a login-time performance check, and WCAG A/AA scans with axe-core.
 
 ## Project layout
@@ -59,12 +60,20 @@ src/test/java/com/nevena/ecommerce/
     ├── ProductDetailsTest.java
     ├── MenuTest.java         # Menu checks (known defect: Reset App State leaves "Remove" buttons)
     └── CheckoutTest.java
+src/test/java/com/nevena/api/   # API tests (REST Assured); they don't extend BaseTest, so no browser starts
+├── client/                   # Endpoint wrappers: AuthClient, BookingClient, shared ApiSpec, TestBooking (create + auto-delete)
+├── model/                    # Java records: Booking, BookingDates, CreatedBooking, Credentials
+├── data/                     # Test data builders (Bookings) and time limits (ApiLimits)
+└── tests/                    # AuthApiTest, BookingApiTest, BookingApiDefectsTest (known defects)
 src/test/resources/
-├── config.properties         # URL, demo credentials, headless, timeout
+├── config.properties         # URL, demo credentials, headless, timeout, API base URL
+├── schemas/booking.json      # JSON schema for GET /booking/{id}
 ├── allure.properties         # Where Allure writes its results
 ├── testng.xml                # Regression suite (default), runs in parallel
 ├── smoke.xml                 # Smoke suite
-└── known-defects.xml         # Tests for bugs the site still has (expected to fail)
+├── known-defects.xml         # Tests for bugs the site still has (expected to fail)
+├── api.xml                   # API suite (group "api")
+└── api-known-defects.xml     # API bugs (group "api-known-defect", expected to fail)
 .github/workflows/tests.yml   # CI on GitHub Actions
 ```
 
@@ -83,6 +92,8 @@ mvn test                                              # regression suite, visibl
 mvn test -Dheadless=true                              # no browser window (as on CI)
 mvn test -DsuiteXml=src/test/resources/smoke.xml      # smoke suite only
 mvn test -DsuiteXml=src/test/resources/known-defects.xml  # known bugs (expected to fail)
+mvn test -DsuiteXml=src/test/resources/api.xml        # API tests (no browser, needs internet)
+mvn test -DsuiteXml=src/test/resources/api-known-defects.xml  # known API bugs (expected to fail)
 mvn test -Dbrowser=firefox                            # run in Firefox instead of Chrome
 mvn test -DthreadCount=1                              # one test at a time (default: 4 in parallel)
 mvn test -Dbase.url=https://other-env.example.com/    # any config value can be overridden
@@ -101,7 +112,9 @@ On GitHub Actions the suite runs on Chrome and Firefox in parallel jobs. Each jo
 
 CI also runs every night at 03:00 UTC, so changes on the live site are caught even when nobody pushes. Every run except pull requests also has a **Known defects** job that runs the `known-defect` suite. It is allowed to fail, so it doesn't turn the run red, and its report shows which bugs are still there.
 
-After each run on `main`, the three Allure reports are published to GitHub Pages: [https://nevena-tfstudio.github.io/Ecomm_Website_Automation/](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/).
+The API tests run in their own job (`API tests`), and the API known defects in `API known defects`, which, like the UI one, is allowed to fail.
+
+After each run on `main`, the five Allure reports (UI Chrome, UI Firefox, UI known defects, API, API known defects) are published to GitHub Pages: [https://nevena-tfstudio.github.io/Ecomm_Website_Automation/](https://nevena-tfstudio.github.io/Ecomm_Website_Automation/).
 
 ## Known defects
 
@@ -125,6 +138,42 @@ Tests in the `known-defect` group describe the **correct** behaviour for bugs th
 | visual_user: a product shows the placeholder picture | `VisualUserTest.noProductShowsThePlaceholderImage` | The Backpack shows the "sl-404" placeholder instead of its photo. |
 | visual_user: wrong, changing prices | `VisualUserTest.listPriceMatchesDetailPrice` | Inventory prices are random and change on every load (the Backpack shows e.g. $83.73), while the detail page shows the real $29.99. |
 | performance_glitch_user: slow login | `PerformanceGlitchUserTest.loginIsFast` | The inventory appears about 5 s after clicking Login; the test requires 2 s or less (`Limits.MAX_LOGIN_TIME`). |
+
+## API tests
+
+`com.nevena.api` tests the public [Restful-Booker](https://restful-booker.herokuapp.com/apidoc/index.html) practice API with REST Assured. They never start a browser (they don't extend `BaseTest`) and run in parallel like the UI tests.
+
+```bash
+mvn test -DsuiteXml=src/test/resources/api.xml                # 22 tests, group "api" (3 also in "smoke")
+mvn test -DsuiteXml=src/test/resources/api-known-defects.xml  # known API bugs (expected to fail)
+mvn test -DsuiteXml=src/test/resources/api.xml -Dapi.base.url=https://other-host.example.com  # other environment
+```
+
+What is covered (`AuthApiTest`, `BookingApiTest`):
+- **Health and auth:** `/ping`, a valid token, bad and empty credentials (the API answers 200 with `{"reason":"Bad credentials"}`).
+- **CRUD:** create then read (all fields match), PUT full update, PATCH partial update, DELETE then GET returns 404, and one test running the whole lifecycle.
+- **Security:** PUT, PATCH and DELETE without a token (or with a bad one) are rejected with 403 and change nothing.
+- **Filters and contract:** `GET /booking` filtered by name and check-in date, and the response checked against `schemas/booking.json`.
+- **Negative and speed:** unknown id gives 404, malformed JSON gives 400, incomplete PUT gives 400, and `/ping` and GET answer within `ApiLimits.MAX_RESPONSE_TIME` (5 s, generous because the service is a free shared Heroku app).
+
+How it is built: `client/` wraps the endpoints around one request spec (base URL from `api.base.url`, JSON headers, and the Allure filter that attaches every request and response to the report); models are Java records; test data comes from `Bookings`. Each test creates its own booking (with a unique last name) and deletes it afterwards (`TestBooking` in try-with-resources, or `finally`), so tests are independent and nothing is shared between threads.
+
+The service is public and shared, and sometimes slow or down; a red API run can mean the service, not the tests. Its login (`admin` / `password123`) is published in its docs.
+
+### API known defects
+
+Same idea as the UI [Known defects](#known-defects): the tests (`BookingApiDefectsTest`, group `api-known-defect`) assert the correct behaviour and fail until the API is fixed. `api.xml` skips them.
+
+| Defect | Test | Observed vs expected |
+|---|---|---|
+| DELETE answers 201 | `deleteAnswersWithNoContentOrOk` | `DELETE /booking/{id}` returns 201 Created; expected 200 or 204. |
+| Missing fields crash create | `createWithMissingFieldsIsBadRequest` | `POST /booking` with only `firstname` returns 500 Internal Server Error; expected 400. |
+| Checkout before check-in accepted | `createWithCheckoutBeforeCheckinIsBadRequest` | A booking that checks out before it checks in is stored (200); expected 400. |
+| Negative price accepted | `createWithNegativePriceIsBadRequest` | `totalprice: -5` is stored (200); expected 400. |
+| Wrong types are coerced | `createWithWrongTypesIsBadRequest` | `totalprice: "abc"`, `depositpaid: "zz"` and dates `"nope"` return 200 and store `null`, `true` and `"0NaN-aN-aN"`; expected 400. |
+| DELETE of a missing booking | `deleteUnknownIdIsNotFound` | Returns 405 Method Not Allowed; expected 404. |
+| Bad credentials are not a 401 | `badCredentialsAnswerUnauthorized` | `POST /auth` with a wrong password returns 200 with `{"reason":"Bad credentials"}`; expected 401. (`AuthApiTest` pins the real behaviour.) |
+| Accept list is answered with 418 | `acceptListWithJsonIsServed` | `POST /booking` with `Accept: application/json, application/javascript, text/javascript, text/json` (what REST Assured's `setAccept(ContentType.JSON)` sends) returns 418 I'm a teapot; a plain `application/json` works. `ApiSpec` therefore sends the plain header. |
 
 ## Accessibility
 
@@ -150,3 +199,5 @@ SauceDemo's special users (`problem_user`, `error_user`, `performance_glitch_use
 | `browser` | `chrome` (default) or `firefox` |
 | `headless` | `true` runs the browser without a window |
 | `timeout.seconds` | Maximum wait for page elements |
+| `api.base.url` | API under test (Restful-Booker) |
+| `api.username` / `api.password` | Restful-Booker's published admin login |

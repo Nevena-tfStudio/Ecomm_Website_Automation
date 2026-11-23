@@ -22,6 +22,8 @@
         <!-- Weaves Allure's @Step annotations at test time (javaagent in the surefire argLine below) -->
         <aspectj.version>1.9.27</aspectj.version>
         <axe.version>4.14.0</axe.version>
+        <!-- 6.3.0 is the latest stable release (7.0.0-RC1 is only a release candidate) -->
+        <rest-assured.version>6.3.0</rest-assured.version>
 
         <!-- Which TestNG suite "mvn test" runs. Override with -DsuiteXml=src/test/resources/smoke.xml -->
         <suiteXml>src/test/resources/testng.xml</suiteXml>
@@ -77,6 +79,24 @@
             <groupId>com.deque.html.axe-core</groupId>
             <artifactId>selenium</artifactId>
             <version>${axe.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- API tests (Restful-Booker): REST Assured, JSON schema checks, and request/response attachments for Allure -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

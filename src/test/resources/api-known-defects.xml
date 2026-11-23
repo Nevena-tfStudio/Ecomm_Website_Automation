@@ -1,0 +1,17 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- API behaviour that breaks REST conventions or the API's own docs. Tests assert the CORRECT
+     behaviour, so they are EXPECTED TO FAIL until the API is fixed.
+     Run: mvn test -DsuiteXml=src/test/resources/api-known-defects.xml
+     When one starts passing, the bug is fixed: move the test into the "api" group. -->
+<suite name="API known defects" parallel="methods" thread-count="4">
+    <test name="API known defect tests">
+        <groups>
+            <run>
+                <include name="api-known-defect"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.nevena.api.tests"/>
+        </packages>
+    </test>
+</suite>

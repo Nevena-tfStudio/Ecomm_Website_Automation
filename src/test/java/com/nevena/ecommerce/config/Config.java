@@ -28,6 +28,19 @@ public final class Config {
         return get("password");
     }
 
+    /** Base URL of the API under test (API tests only). */
+    public static String apiBaseUrl() {
+        return get("api.base.url");
+    }
+
+    public static String apiUsername() {
+        return get("api.username");
+    }
+
+    public static String apiPassword() {
+        return get("api.password");
+    }
+
     /** "chrome" or "firefox". */
     public static String browser() {
         return get("browser");

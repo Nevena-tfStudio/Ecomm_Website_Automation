@@ -102,10 +102,94 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-  # Publishes the three Allure reports to GitHub Pages, so anyone can open them in the browser.
+  # API tests against Restful-Booker. No browser needed, so they run in their own fast job.
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Cache Allure tooling
+        uses: actions/cache@v4
+        with:
+          path: .allure
+          key: allure-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+
+      - name: Run API tests
+        run: mvn -B test -DsuiteXml=src/test/resources/api.xml
+
+      - name: Build Allure report
+        if: always()
+        run: mvn -B allure:report
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-report
+          path: |
+            target/site/allure-maven-plugin/
+            target/surefire-reports/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # Documented API bugs. Like the UI known defects: expected to fail, never turns the run red.
+  api-known-defects:
+    name: API known defects
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Cache Allure tooling
+        uses: actions/cache@v4
+        with:
+          path: .allure
+          key: allure-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+
+      - name: Run API known-defect tests
+        run: mvn -B test -DsuiteXml=src/test/resources/api-known-defects.xml
+
+      - name: Build Allure report
+        if: always()
+        run: mvn -B allure:report
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-known-defects-report
+          path: |
+            target/site/allure-maven-plugin/
+            target/surefire-reports/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # Publishes the Allure reports to GitHub Pages, so anyone can open them in the browser.
   publish-reports:
     name: Publish reports to GitHub Pages
-    needs: [test, known-defects]
+    needs: [test, known-defects, api, api-known-defects]
     # Publish after failed runs too (that's when the report matters most), but only for main.
     if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -129,9 +213,10 @@ jobs:
       - name: Build site
         env:
           RESULT: ${{ needs.test.result }}
+          API_RESULT: ${{ needs.api.result }}
         run: |
           mkdir -p site
-          for name in chrome:test-reports-chrome firefox:test-reports-firefox known-defects:known-defects-report; do
+          for name in chrome:test-reports-chrome firefox:test-reports-firefox known-defects:known-defects-report api:api-report api-known-defects:api-known-defects-report; do
             dir="${name%%:*}"; artifact="${name#*:}"
             report="reports/$artifact/site/allure-maven-plugin/index.html"
             if [ -f "$report" ]; then mkdir -p "site/$dir" && cp "$report" "site/$dir/index.html"; fi
@@ -145,7 +230,7 @@ jobs:
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>SauceDemo test reports</title>
+            <title>Test reports</title>
             <style>
               body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: #1f2328; background: #fff; }
               a { color: #0969da; }
@@ -154,7 +239,8 @@ jobs:
             </style>
           </head>
           <body>
-            <h1>SauceDemo test reports</h1>
+            <h1>Test reports</h1>
+            <h2>UI (SauceDemo)</h2>
             <p>Allure reports from the latest CI run of
               <a href="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY">$GITHUB_REPOSITORY</a>.</p>
             <ul>
@@ -162,7 +248,12 @@ jobs:
               <li><a href="firefox/">Regression suite on Firefox</a></li>
               <li><a href="known-defects/">Known defects</a>: tests for real site bugs, expected to fail until the site is fixed</li>
             </ul>
-            <p class="meta">Regression result: $RESULT &middot; commit <code>$short_sha</code> &middot; $date &middot;
+            <h2>API (Restful-Booker)</h2>
+            <ul>
+              <li><a href="api/">API tests</a></li>
+              <li><a href="api-known-defects/">API known defects</a>: tests for real API bugs, expected to fail until the API is fixed</li>
+            </ul>
+            <p class="meta">UI regression: $RESULT &middot; API: $API_RESULT &middot; commit <code>$short_sha</code> &middot; $date &middot;
               <a href="$run_url">CI run</a></p>
           </body>
           </html>

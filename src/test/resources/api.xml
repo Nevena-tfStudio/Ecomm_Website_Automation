@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- API tests against the public Restful-Booker service (needs internet, no browser).
+     Run: mvn test -DsuiteXml=src/test/resources/api.xml -->
+<suite name="API" parallel="methods" thread-count="4">
+    <test name="API tests">
+        <groups>
+            <run>
+                <include name="api"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.nevena.api.tests"/>
+        </packages>
+    </test>
+</suite>
